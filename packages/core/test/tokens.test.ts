@@ -197,3 +197,26 @@ it('colorsRendering none', async () => {
     }),
   ).toMatchSnapshot('colorsRendering none')
 })
+
+it('ansi with multiple themes', async () => {
+  using engine = await createShikiPrimitiveAsync({
+    themes: [
+      import('@shikijs/themes/vitesse-light'),
+      import('@shikijs/themes/vitesse-dark'),
+    ],
+    langs: [],
+    engine: createJavaScriptRegexEngine(),
+  })
+
+  const code = '\x1B[31mred\x1B[0m'
+  const html = codeToHtml(engine, code, {
+    lang: 'ansi',
+    themes: {
+      light: 'vitesse-light',
+      dark: 'vitesse-dark',
+    },
+  })
+
+  expect(html).toContain('<span style="color:#')
+  expect(html).toContain('--shiki-dark:#')
+})

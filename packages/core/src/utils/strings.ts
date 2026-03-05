@@ -118,6 +118,7 @@ export function guessEmbeddedLanguages(
     if (parts.length > 0) {
       let lang = parts[0].split('/').pop()
       if (lang === 'env') {
+        lang = undefined
         // Find first part that doesn't start with '-'
         for (let i = 1; i < parts.length; i++) {
           if (parts[i] && !parts[i].startsWith('-')) {
@@ -126,8 +127,21 @@ export function guessEmbeddedLanguages(
           }
         }
       }
-      if (lang)
-        langs.add(lang.toLowerCase())
+
+      if (lang) {
+        lang = lang.toLowerCase()
+        // Map common executable names to Shiki aliases
+        if (lang === 'node')
+          lang = 'javascript'
+        else if (lang === 'python3')
+          lang = 'python'
+        else if (lang === 'rb')
+          lang = 'ruby'
+        else if (lang === 'sh' || lang === 'zsh')
+          lang = 'shell'
+
+        langs.add(lang)
+      }
     }
   }
 

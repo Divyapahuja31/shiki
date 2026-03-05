@@ -174,4 +174,34 @@ describe('run', () => {
     expect(output).toContain('javascript')
     expect(output).toContain('python')
   })
+
+  describe('stdin', () => {
+    it('reads from stdin and guesses language', async () => {
+      const output: string[] = []
+      const content = '#!/usr/bin/env node\nconsole.log("hi")'
+
+      const mockStdin = {
+        isTTY: false,
+        on: vi.fn((event, handler) => {
+          if (event === 'data')
+            handler(new TextEncoder().encode(content))
+          if (event === 'end')
+            handler()
+          return mockStdin
+        }),
+      }
+
+      const originalStdin = process.stdin
+      Object.defineProperty(process, 'stdin', { value: mockStdin, configurable: true })
+
+      await run(['node', 'shiki'], msg => output.push(msg))
+
+      expect(output.length).toBe(1)
+      expect(output[0]).toContain('console') // Should be highlighted
+      // Since we can't easily check for colors in this test environment without more setup,
+      // we at least verify it didn't throw and produced output.
+
+      Object.defineProperty(process, 'stdin', { value: originalStdin, configurable: true })
+    })
+  })
 })

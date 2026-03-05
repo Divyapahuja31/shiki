@@ -199,15 +199,22 @@ print("hello")
   })
 
   it('detects languages from shebangs', () => {
-    expect(guessEmbeddedLanguages('#!/usr/bin/node', undefined)).toContain('node')
+    expect(guessEmbeddedLanguages('#!/usr/bin/node', undefined)).toContain('javascript')
     expect(guessEmbeddedLanguages('#!/bin/bash', undefined)).toContain('bash')
-    expect(guessEmbeddedLanguages('#!/usr/bin/env python3', undefined)).toContain('python3')
+    expect(guessEmbeddedLanguages('#!/usr/bin/env python3', undefined)).toContain('python')
     expect(guessEmbeddedLanguages('#!/usr/bin/env -S ts-node --foo', undefined)).toContain('ts-node')
+    expect(guessEmbeddedLanguages('#!/usr/bin/env -S node --inspect', undefined)).toContain('javascript')
+    expect(guessEmbeddedLanguages('#!/usr/bin/env', undefined)).toEqual([])
+    expect(guessEmbeddedLanguages('#!', undefined)).toEqual([])
+    expect(guessEmbeddedLanguages('  #!/bin/bash', undefined)).toEqual([]) // Must be at start
   })
 
   it('detects languages from comments', () => {
     expect(guessEmbeddedLanguages('<!-- language: lang-js -->', undefined)).toContain('js')
     expect(guessEmbeddedLanguages('// @lang typescript', undefined)).toContain('typescript')
     expect(guessEmbeddedLanguages('/** @lang python */', undefined)).toContain('python')
+    expect(guessEmbeddedLanguages('<!-- language: lang-  -->', undefined)).toEqual([])
+    expect(guessEmbeddedLanguages('// @lang  ', undefined)).toEqual([])
+    expect(guessEmbeddedLanguages('<!-- language: lang-JS-variant -->', undefined)).toContain('js-variant')
   })
 })
