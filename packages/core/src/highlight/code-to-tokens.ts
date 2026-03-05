@@ -1,8 +1,9 @@
-import type { CodeOptionsMultipleThemes, CodeToTokensOptions, GrammarState, ShikiPrimitive, StringLiteralUnion, ThemedToken, ThemeRegistrationAny, TokensResult } from '@shikijs/types'
+import type { CodeOptionsMultipleThemes, CodeToTokensOptions, GrammarState, ShikiPrimitive, StringLiteralUnion, ThemedToken, ThemedTokenWithVariants, ThemeRegistrationAny, TokensResult } from '@shikijs/types'
 import { codeToTokensWithThemes, getLastGrammarStateFromMap, setLastGrammarStateToMap } from '@shikijs/primitive'
 import { ShikiError } from '@shikijs/types'
 import { applyColorReplacements, flatTokenVariants, resolveColorReplacements } from '../utils'
 import { DEFAULT_COLOR_LIGHT_DARK } from '../utils/constants'
+import { tokenizeAnsiWithTheme } from './code-to-tokens-ansi'
 import { codeToTokensBase } from './code-to-tokens-base'
 
 /**
@@ -38,11 +39,35 @@ export function codeToTokens(
     if (themes.length === 0)
       throw new ShikiError('`themes` option must not be empty')
 
-    const themeTokens = codeToTokensWithThemes(
-      primitive,
-      code,
-      options,
-    )
+    const lang = primitive.resolveLangAlias(options.lang || 'text')
+    let themeTokens: any[][]
+    if (lang === 'ansi') {
+      themeTokens = themes.map((t) => {
+        const { theme } = primitive.setTheme(t.theme)
+        return tokenizeAnsiWithTheme(theme, code, options)
+      })
+
+      // Align tokens (they should already be aligned for ANSI, but we use the merged format)
+      themeTokens = themeTokens[0].map((line, lineIdx) => line.map((_token: ThemedToken, tokenIdx: number) => {
+        const mergedToken: ThemedTokenWithVariants = {
+          content: _token.content,
+          variants: {},
+          offset: _token.offset,
+        }
+        themeTokens.forEach((t, themeIdx) => {
+          const { content: _, offset: __, ...styles } = t[lineIdx][tokenIdx]
+          mergedToken.variants[themes[themeIdx].color] = styles
+        })
+        return mergedToken
+      }))
+    }
+    else {
+      themeTokens = codeToTokensWithThemes(
+        primitive,
+        code,
+        options,
+      )
+    }
 
     grammarState = getLastGrammarStateFromMap(themeTokens)
 

@@ -231,7 +231,7 @@ async function run() {
     '',
     createTable(reportOk),
     '',
-    '###### Table Field Explanations',
+    '### Table Field Explanations',
     '',
     '- **Highlight Match**: Whether the highlighting results matched with the WASM engine for the [sample snippet](https://github.com/shikijs/textmate-grammars-themes/tree/main/samples).',
     '- **Patterns Parsable**: Number of regex patterns that can be parsed by the JavaScript RegExp engine.',
