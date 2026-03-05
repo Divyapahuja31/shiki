@@ -82,9 +82,16 @@ export async function run(
         process.stdin.on('error', reject)
       })
 
-      const lang = options.lang || 'text'
+      const { codeToHtml, guessEmbeddedLanguages } = await import('shiki')
+      let lang = (options.lang as string | undefined)?.toLowerCase()
+      if (!lang) {
+        const guessed = guessEmbeddedLanguages(content, undefined)
+        if (guessed.length > 0)
+          lang = guessed[0]
+      }
+      lang ||= 'text'
+
       if (options.format === 'html') {
-        const { codeToHtml } = await import('shiki')
         log(await codeToHtml(content, {
           lang: lang as BundledLanguage,
           theme: options.theme,
@@ -100,11 +107,18 @@ export async function run(
     return
   }
 
+  const { codeToHtml, guessEmbeddedLanguages } = await import('shiki')
   const codes = await Promise.all(files.map(async (path) => {
     const { content, ext } = await readSource(path)
-    const lang = (options.lang || ext).toLowerCase()
+    let lang = (options.lang || ext)?.toLowerCase()
+    if (!lang || lang === 'text') {
+      const guessed = guessEmbeddedLanguages(content, undefined)
+      if (guessed.length > 0)
+        lang = guessed[0]
+    }
+    lang ||= 'text'
+
     if (options.format === 'html') {
-      const { codeToHtml } = await import('shiki')
       return await codeToHtml(content, {
         lang: lang as BundledLanguage,
         theme: options.theme,

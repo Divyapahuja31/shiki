@@ -110,6 +110,40 @@ export function guessEmbeddedLanguages(
       langs.add(lang)
   }
 
+  // For shebangs
+  // Matches: #!/usr/bin/env node, #!/bin/bash, etc.
+  if (code.startsWith('#!')) {
+    const firstLine = code.split('\n', 1)[0]
+    const parts = firstLine.slice(2).trim().split(/\s+/)
+    if (parts.length > 0) {
+      let lang = parts[0].split('/').pop()
+      if (lang === 'env') {
+        // Find first part that doesn't start with '-'
+        for (let i = 1; i < parts.length; i++) {
+          if (parts[i] && !parts[i].startsWith('-')) {
+            lang = parts[i].split('/').pop()
+            break
+          }
+        }
+      }
+      if (lang)
+        langs.add(lang.toLowerCase())
+    }
+  }
+
+  // For common comments
+  // Matches: <!-- language: lang-js --> (StackOverflow), @lang javascript (JSDoc), etc.
+  for (const match of code.matchAll(/language:\s*lang-([\w-]+)/g)) {
+    const lang = match[1].toLowerCase().trim()
+    if (lang)
+      langs.add(lang)
+  }
+  for (const match of code.matchAll(/@lang\s+([\w-]+)/g)) {
+    const lang = match[1].toLowerCase().trim()
+    if (lang)
+      langs.add(lang)
+  }
+
   if (!highlighter)
     return Array.from(langs)
 
