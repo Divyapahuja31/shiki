@@ -1,6 +1,24 @@
 /* eslint-disable style/no-tabs */
 import { describe, expect, it } from 'vitest'
-import { guessEmbeddedLanguages, splitLines } from '.'
+import { createPositionConverter, guessEmbeddedLanguages, splitLines } from '.'
+
+describe('createPositionConverter', () => {
+  it('basic conversion', () => {
+    const code = 'abc\ndef\n'
+    const converter = createPositionConverter(code)
+    expect(converter.lines).toEqual(['abc\n', 'def\n', ''])
+
+    expect(converter.indexToPos(0)).toEqual({ line: 0, character: 0 })
+    expect(converter.indexToPos(2)).toEqual({ line: 0, character: 2 })
+    expect(converter.indexToPos(4)).toEqual({ line: 1, character: 0 })
+    expect(converter.indexToPos(8)).toEqual({ line: 2, character: 0 })
+
+    expect(converter.posToIndex(0, 0)).toBe(0)
+    expect(converter.posToIndex(0, 2)).toBe(2)
+    expect(converter.posToIndex(1, 0)).toBe(4)
+    expect(converter.posToIndex(1, 4)).toBe(8)
+  })
+})
 
 describe('splitLines', () => {
   it('splitLines', () => {
@@ -204,9 +222,23 @@ print("hello")
     expect(guessEmbeddedLanguages('#!/usr/bin/env python3', undefined)).toContain('python')
     expect(guessEmbeddedLanguages('#!/usr/bin/env -S ts-node --foo', undefined)).toContain('ts-node')
     expect(guessEmbeddedLanguages('#!/usr/bin/env -S node --inspect', undefined)).toContain('javascript')
+    expect(guessEmbeddedLanguages('#!/bin/zsh', undefined)).toContain('shell')
     expect(guessEmbeddedLanguages('#!/usr/bin/env', undefined)).toEqual([])
     expect(guessEmbeddedLanguages('#!', undefined)).toEqual([])
     expect(guessEmbeddedLanguages('  #!/bin/bash', undefined)).toEqual([]) // Must be at start
+  })
+
+  it('filters languages with highlighter', () => {
+    const mockHighlighter: any = {
+      getBundledLanguages: () => ({
+        javascript: {},
+        python: {},
+      }),
+    }
+    const code = '```javascript\n```\n```rust\n```'
+    const detected = guessEmbeddedLanguages(code, undefined, mockHighlighter)
+    expect(detected).toContain('javascript')
+    expect(detected).not.toContain('rust')
   })
 
   it('detects languages from comments', () => {

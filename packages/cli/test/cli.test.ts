@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -184,7 +185,7 @@ describe('run', () => {
         isTTY: false,
         on: vi.fn((event, handler) => {
           if (event === 'data')
-            handler(new TextEncoder().encode(content))
+            handler(Buffer.from(content))
           if (event === 'end')
             handler()
           return mockStdin

@@ -220,3 +220,23 @@ it('ansi with multiple themes', async () => {
   expect(html).toContain('<span style="color:#')
   expect(html).toContain('--shiki-dark:#')
 })
+
+it('throws on empty themes', async () => {
+  using engine = await createShikiPrimitiveAsync({
+    themes: [],
+    langs: [],
+    engine: createJavaScriptRegexEngine(),
+  })
+  expect(() => codeToTokens(engine, 'code', { themes: {} }))
+    .toThrowError('`themes` option must not be empty')
+})
+
+it('throws on invalid options', async () => {
+  using engine = await createShikiPrimitiveAsync({
+    themes: [import('@shikijs/themes/vitesse-dark')],
+    langs: [],
+    engine: createJavaScriptRegexEngine(),
+  })
+  expect(() => codeToTokens(engine, 'code', {} as any))
+    .toThrowError('Invalid options, either `theme` or `themes` must be provided')
+})
